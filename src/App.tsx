@@ -7,18 +7,40 @@ const PRESETS = [
   { label: "90", minutes: 90 },
 ];
 
+const DONE_LINES = [
+  "The work is done.",
+  "Stillness was the point.",
+  "You showed up.",
+  "The void held you.",
+];
+
+const DONE_LINE = DONE_LINES[Math.floor(Math.random() * DONE_LINES.length)];
+
+type CustomModalProps = {
+  onSet: (minutes: number) => void;
+  onClose: () => void;
+};
+
+type Goal = { id: number; text: string; done: boolean };
+
+type GoalsDrawerProps = { onClose: () => void };
+
+type DoneCardProps = { elapsed: number; onReset: () => void };
+
+type LockBreakModalProps = { onConfirm: () => void; onCancel: () => void };
+
 /* ─── Custom Timer Modal ─── */
-function CustomModal({ onSet, onClose }) {
+function CustomModal({ onSet, onClose }: CustomModalProps) {
   const [hrs, setHrs] = useState(0);
   const [mins, setMins] = useState(30);
-  const overlayRef = useRef(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const fn = (e) => { if (e.key === "Escape") onClose(); };
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
-  const clampH = (v) => Math.max(0, Math.min(5, v));
-  const clampM = (v) => Math.max(0, Math.min(59, v));
+  const clampH = (v: number) => Math.max(0, Math.min(5, v));
+  const clampM = (v: number) => Math.max(0, Math.min(59, v));
   const totalMins = hrs * 60 + mins;
   const canSet = totalMins > 0;
   return (
@@ -51,10 +73,10 @@ function CustomModal({ onSet, onClose }) {
 }
 
 /* ─── Goals Drawer ─── */
-function GoalsDrawer({ onClose }) {
-  const [goals, setGoals] = useState([]);
+function GoalsDrawer({ onClose }: GoalsDrawerProps) {
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [draft, setDraft] = useState("");
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const addGoal = () => {
     const text = draft.trim();
     if (!text) return;
@@ -62,8 +84,8 @@ function GoalsDrawer({ onClose }) {
     setDraft("");
     inputRef.current?.focus();
   };
-  const toggle = (id) => setGoals((g) => g.map((x) => x.id === id ? { ...x, done: !x.done } : x));
-  const remove = (id) => setGoals((g) => g.filter((x) => x.id !== id));
+  const toggle = (id: number) => setGoals((g) => g.map((x) => x.id === id ? { ...x, done: !x.done } : x));
+  const remove = (id: number) => setGoals((g) => g.filter((x) => x.id !== id));
   const done = goals.filter((g) => g.done).length;
   const total = goals.length;
   return (
@@ -100,14 +122,13 @@ function GoalsDrawer({ onClose }) {
 }
 
 /* ─── Completion Ceremony ─── */
-function DoneCard({ elapsed, onReset }) {
-  const fmt = (s) => {
+function DoneCard({ elapsed, onReset }: DoneCardProps) {
+  const fmt = (s: number) => {
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
     if (h > 0) return `${h}h ${m}m`;
     return `${m} min`;
   };
-  const lines = ["The work is done.", "Stillness was the point.", "You showed up.", "The void held you."];
-  const line = lines[Math.floor(Math.random() * lines.length)];
+  const line = DONE_LINE;
   return (
     <div className="dc-overlay">
       <div className="dc-inner">
@@ -122,7 +143,7 @@ function DoneCard({ elapsed, onReset }) {
 }
 
 /* ─── Lock Break Confirm ─── */
-function LockBreakModal({ onConfirm, onCancel }) {
+function LockBreakModal({ onConfirm, onCancel }: LockBreakModalProps) {
   return (
     <div className="lb-overlay" onClick={onCancel}>
       <div className="lb-panel" onClick={(e) => e.stopPropagation()}>
@@ -145,7 +166,7 @@ export default function StudyFocus() {
   const [isDone, setIsDone] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
-  const [wakeLockSupported, setWakeLockSupported] = useState(false);
+  const [wakeLockSupported] = useState(() => "wakeLock" in navigator);
 
   // Bold/weird modes
   const [voidMode, setVoidMode] = useState(false);       // clock disappears
@@ -155,29 +176,36 @@ export default function StudyFocus() {
   const [lockShake, setLockShake] = useState(false);      // shake animation on lock hit
   const [elapsedAtDone, setElapsedAtDone] = useState(0);
 
-  const wakeLockRef = useRef(null);
-  const intervalRef = useRef(null);
-  const sessionStartRef = useRef(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const sessionStartRef = useRef<number | null>(null);
   const elapsedRef = useRef(0);
 
-  useEffect(() => { setWakeLockSupported("wakeLock" in navigator); }, []);
-
   const requestWakeLock = async () => {
-    if ("wakeLock" in navigator) { try { wakeLockRef.current = await navigator.wakeLock.request("screen"); } catch (_) { } }
+    if ("wakeLock" in navigator) {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+      } catch {
+        /* ignore */
+      }
+    }
   };
   const releaseWakeLock = () => {
-    if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
+    wakeLockRef.current?.release();
+    wakeLockRef.current = null;
   };
 
   useEffect(() => {
     if (isRunning) {
       requestWakeLock();
-      if (!sessionStartRef.current) sessionStartRef.current = Date.now();
-      intervalRef.current = setInterval(() => {
+      if (sessionStartRef.current === null) sessionStartRef.current = Date.now();
+      intervalRef.current = window.setInterval(() => {
         elapsedRef.current += 1;
         setRemaining((r) => {
           if (r <= 1) {
-            clearInterval(intervalRef.current);
+            if (intervalRef.current !== null) {
+              clearInterval(intervalRef.current);
+            }
             setIsRunning(false);
             setIsDone(true);
             setElapsedAtDone(elapsedRef.current);
@@ -190,18 +218,24 @@ export default function StudyFocus() {
       }, 1000);
     } else {
       releaseWakeLock();
-      clearInterval(intervalRef.current);
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+      }
     }
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [isRunning]);
 
-  const formatTime = (s) => {
+  const formatTime = (s: number) => {
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
     if (h > 0) return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  const setPreset = (minutes) => {
+  const setPreset = (minutes: number) => {
     const secs = minutes * 60;
     setTotalSeconds(secs); setRemaining(secs); setIsRunning(false); setIsDone(false);
     elapsedRef.current = 0; sessionStartRef.current = null;
