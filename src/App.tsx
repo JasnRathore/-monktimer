@@ -3,9 +3,7 @@ import { SlidersHorizontal, X, Circle, CheckCircle, CaretUp, CaretDown, Plus } f
 
 const PRESETS = [
   { label: "25", minutes: 25 },
-  { label: "45", minutes: 45 },
   { label: "60", minutes: 60 },
-  { label: "90", minutes: 90 },
 ];
 
 type CustomModalProps = { onSet: (minutes: number) => void; onClose: () => void };
@@ -33,14 +31,14 @@ function CustomModal({ onSet, onClose }: CustomModalProps) {
         <div className="cm-pickers">
           <div className="cm-field">
             <button className="cm-arrow" onClick={() => setHrs((v) => clampH(v + 1))} tabIndex={-1}><CaretUp weight="bold" size={16} /></button>
-            <input className="cm-digit-input" type="number" min={0} max={5} value={hrs} onChange={(e) => setHrs(isNaN(parseInt(e.target.value, 10)) ? 0 : clampH(parseInt(e.target.value, 10)))} />
+            <input className="cm-digit-input" type="number" min={0} max={5} value={hrs} onChange={(e) => setHrs(isNaN(parseInt(e.target.value, 10)) ? 0 : clampH(parseInt(e.target.value, 10)))} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
             <button className="cm-arrow" onClick={() => setHrs((v) => clampH(v - 1))} tabIndex={-1}><CaretDown weight="bold" size={16} /></button>
             <span className="cm-unit">hr</span>
           </div>
           <div className="cm-colon">:</div>
           <div className="cm-field">
             <button className="cm-arrow" onClick={() => setMins((v) => v >= 59 ? 0 : v + 1)} tabIndex={-1}><CaretUp weight="bold" size={16} /></button>
-            <input className="cm-digit-input" type="number" min={0} max={59} value={String(mins).padStart(2, "0")} onChange={(e) => setMins(isNaN(parseInt(e.target.value, 10)) ? 0 : clampM(parseInt(e.target.value, 10)))} />
+            <input className="cm-digit-input" type="number" min={0} max={59} value={String(mins).padStart(2, "0")} onChange={(e) => setMins(isNaN(parseInt(e.target.value, 10)) ? 0 : clampM(parseInt(e.target.value, 10)))} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
             <button className="cm-arrow" onClick={() => setMins((v) => v <= 0 ? 59 : v - 1)} tabIndex={-1}><CaretDown weight="bold" size={16} /></button>
             <span className="cm-unit">min</span>
           </div>
@@ -272,6 +270,7 @@ export default function StudyFocus() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=DM+Sans:wght@300;400;500&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { overscroll-behavior-y: none; overscroll-behavior-x: none; }
 
         :root, [data-theme="monk"] {
           --bg-main: #080808; --bg-panel: #0e0d0c; --bg-overlay: rgba(6,6,6,0.55);
@@ -350,8 +349,7 @@ export default function StudyFocus() {
         .sf-goal-check { background: transparent; border: none; cursor: pointer; color: var(--text-dim); display: flex; align-items: center; padding: 2px; transition: color 0.2s; }
         .sf-goal-check:hover { color: var(--text-main); }
         .sf-goal-text { font-size: 16px; font-weight: 400; color: var(--text-sec); flex: 1; text-align: left; line-height: 1.5; transition: color 0.2s; }
-        .sf-goal-remove { background: transparent; border: none; cursor: pointer; color: var(--text-dark); opacity: 0; padding: 2px; display: flex; align-items: center; transition: opacity 0.2s, color 0.2s; }
-        .sf-goal-item:hover .sf-goal-remove { opacity: 1; }
+        .sf-goal-remove { background: transparent; border: none; cursor: pointer; color: var(--text-dark); padding: 2px; display: flex; align-items: center; transition: color 0.2s; }
         .sf-goal-remove:hover { color: var(--accent); }
         
         .sf-goal-input-wrapper { display: flex; align-items: center; gap: 14px; width: 100%; padding: 2px 0; margin-top: 0.5rem; opacity: 0.6; transition: opacity 0.2s; }
@@ -423,6 +421,55 @@ export default function StudyFocus() {
         .sf-progress-fill.done { background: var(--done); }
         .sf-pct { position: fixed; bottom: 1.5rem; right: 1.5rem; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: var(--text-xdark); z-index: 10; transition: color 0.4s; }
         .sf-pct.active { color: var(--border-bright); }
+
+        /* ── Mobile Centric Responsive Design ── */
+        @media (max-width: 600px) {
+          .sf-body { padding: 1.5rem 1rem; }
+          
+          .sf-timer { font-size: clamp(80px, 25vw, 120px); letter-spacing: -0.01em; margin-bottom: 0; }
+          
+          .sf-controls { gap: 0.75rem; width: 100%; justify-content: center; }
+          .sf-btn-primary { width: 100%; justify-content: center; padding: 18px 20px; font-size: 12px; }
+          .sf-btn-ghost { width: 100%; justify-content: center; padding: 18px 20px; background: var(--bg-hover); border-radius: 4px; font-size: 12px; }
+          
+          .sf-presets { width: 100%; display: flex; }
+          .sf-preset { flex: 1; text-align: center; padding: 14px 0; }
+          
+          .sf-goals-section { position: relative; top: auto; left: auto; transform: none; margin-top: 2.5rem; padding: 0; max-width: 100%; width: 100%; }
+          
+          .sd-overlay, .cm-overlay { align-items: flex-end; }
+          
+          .sd-panel, .cm-panel { 
+            width: 100vw; min-width: 100vw; max-width: 100vw; 
+            border-radius: 20px 20px 0 0; border: none; 
+            border-top: 1px solid var(--border-bright);
+            margin: 0; padding-top: 2rem;
+            animation: slide-up-drawer 0.35s cubic-bezier(0.16,1,0.3,1); 
+            position: relative;
+          }
+          
+          .sd-panel::before, .cm-panel::before {
+            content: ''; position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            width: 36px; height: 4px; border-radius: 4px; background: var(--border-bright);
+          }
+          
+          .sd-panel { height: auto; max-height: 85vh; padding-top: 1rem; }
+          .sd-panel::before { top: 10px; }
+          .sd-header { padding: 1.5rem 1.5rem 1rem; border-bottom: none; }
+          .sd-item { padding: 0 1.5rem; }
+          .sd-options { flex-wrap: wrap; width: 100%; }
+          .sd-opt { flex: 1 1 40%; text-align: center; }
+          
+          .cm-panel { height: auto; max-height: 85vh; padding: 2.5rem 1.5rem 1.5rem; }
+          .cm-pickers { gap: 0.25rem; }
+          .cm-digit-input { font-size: 56px; width: 80px; }
+          .cm-colon { font-size: 56px; padding-bottom: 12px; }
+          
+          @keyframes slide-up-drawer { 
+            from { transform: translateY(100%); } 
+            to { transform: translateY(0); } 
+          }
+        }
       `}</style>
 
       <div className="sf-root" data-theme={settings.theme || "monk"}>
@@ -496,7 +543,12 @@ export default function StudyFocus() {
                   placeholder="Add a focus..."
                   value={draftGoal}
                   onChange={(e) => setDraftGoal(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addGoal()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      addGoal();
+                      e.currentTarget.blur();
+                    }
+                  }}
                 />
               </div>
             </div>
