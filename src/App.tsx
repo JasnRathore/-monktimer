@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SlidersHorizontal, X, Circle, CheckCircle, CaretUp, CaretDown, Plus } from "@phosphor-icons/react";
+import { Gear, X, Circle, CheckCircle, CaretUp, CaretDown, Plus } from "@phosphor-icons/react";
 
 const PRESETS = [
   { label: "25", minutes: 25 },
@@ -306,7 +306,7 @@ export default function StudyFocus() {
 
         /* ── Top bar ── */
         .sf-topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; justify-content: flex-end; gap: 2px; padding: 1.25rem 1.5rem; }
-        .sf-topbar-btn { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-dim); background: transparent; border: none; cursor: pointer; padding: 7px 14px; transition: color 0.2s, background 0.2s; display: flex; align-items: center; gap: 8px; }
+        .sf-topbar-btn { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-sec); background: transparent; border: none; cursor: pointer; padding: 7px 14px; transition: color 0.2s, background 0.2s; display: flex; align-items: center; gap: 8px; }
         .sf-topbar-btn:hover { color: var(--text-main); }
         .sf-topbar-btn.active { color: var(--accent); }
         .sf-topbar-divider { width: 0.5px; height: 16px; background: var(--border); margin: 0 2px; }
@@ -339,7 +339,7 @@ export default function StudyFocus() {
         .sf-presets { display: flex; margin-top: 3.5rem; border: 0.5px solid var(--border-light); }
         .sf-preset { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.18em; color: var(--text-dim); background: transparent; border: none; border-right: 0.5px solid var(--border-light); padding: 10px 22px; cursor: pointer; transition: all 0.2s; }
         .sf-preset:last-child { border-right: none; }
-        .sf-preset:hover { color: var(--text-main); background: var(--bg-hover); }
+        .sf-preset:hover:not(:disabled) { color: var(--text-main); background: var(--bg-hover); }
         .sf-preset.active { color: var(--text-main); background: var(--bg-active); }
 
         /* ── Inline Goals ── */
@@ -478,7 +478,8 @@ export default function StudyFocus() {
         {/* Top bar */}
         <div className="sf-topbar">
           <button className={`sf-topbar-btn ${showSettings ? "active" : ""}`} onClick={openSettings} title="Settings">
-            <SlidersHorizontal size={20} weight="regular" />
+            <span>Settings</span>
+            <Gear size={26} weight="fill" />
           </button>
         </div>
 
@@ -508,7 +509,8 @@ export default function StudyFocus() {
                   key={p.minutes}
                   className={`sf-preset ${totalSeconds === p.minutes * 60 ? "active" : ""}`}
                   onClick={() => !isRunning && setPreset(p.minutes)}
-                  style={{ opacity: isRunning ? 0.4 : 1, cursor: isRunning ? "default" : "pointer" }}
+                  disabled={isRunning}
+                  style={{ opacity: isRunning ? 0.4 : 1 }}
                 >
                   {p.label}
                   <span style={{ opacity: 0.45, marginLeft: 3, fontSize: 10, letterSpacing: "0.1em" }}>min</span>
@@ -517,7 +519,8 @@ export default function StudyFocus() {
               <button
                 className={`sf-preset ${isCustom ? "active" : ""}`}
                 onClick={() => !isRunning && setShowCustom(true)}
-                style={{ opacity: isRunning ? 0.4 : 1, cursor: isRunning ? "default" : "pointer" }}
+                disabled={isRunning}
+                style={{ opacity: isRunning ? 0.4 : 1 }}
               >
                 {isCustom ? `${Math.floor(totalSeconds / 60)}\u202fmin` : "Custom"}
               </button>
